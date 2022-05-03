@@ -51,8 +51,9 @@ public class YongHui {
                 .headers(headers)
                 .get()
                 .build();
+        Response response = null;
         try {
-            Response response = okHttpClient.newCall(request).execute();
+            response = okHttpClient.newCall(request).execute();
             if (!response.isSuccessful()) {
                 log.error("[fetchActivityJson] 获取接口数据失败, 接口状态码: {}", response.code());
                 return null;
@@ -68,6 +69,10 @@ public class YongHui {
         } catch (Exception e) {
             log.error("[fetchActivityJson] 请求永辉接口发生异常", e);
             return null;
+        } finally {
+            if (response != null) {
+                response.close();
+            }
         }
     }
 
@@ -87,6 +92,17 @@ public class YongHui {
                 String title = sku.getString("title");
                 String price = sku.getJSONObject("price").getString("price");
 
+                String customSkuName = "【" + title + " @ " + price + "】";
+                JSONObject cartAction = sku.getJSONObject("cartAction");
+                Integer actionType = cartAction.getInteger("actionType");
+                if (actionType == 3 || actionType == -2) {
+                    continue;
+                }
+                String actionText = cartAction.getString("actionText");
+                if (Objects.equals("已抢完", actionText) || Objects.equals("未开始", actionText)) {
+                    continue;
+                }
+
                 // 忽略不感兴趣的sku关键字
                 boolean shouldContinue = false;
                 for (String ignoreSkuKeyword : ignoreSkuKeywords) {
@@ -96,15 +112,6 @@ public class YongHui {
                     }
                 }
                 if (shouldContinue) {
-                    continue;
-                }
-
-                String customSkuName = "【" + title + " @ " + price + "】";
-                JSONObject cartAction = sku.getJSONObject("cartAction");
-                if (Objects.equals(cartAction.getString("actionText"), "已抢完")) {
-                    continue;
-                }
-                if (Objects.equals(cartAction.getString("actionText"), "未开始")) {
                     continue;
                 }
 

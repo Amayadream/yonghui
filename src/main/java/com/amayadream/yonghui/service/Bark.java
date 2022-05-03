@@ -20,14 +20,19 @@ public class Bark {
     private static OkHttpClient okHttpClient = new OkHttpClient();
 
     public static void sendNotice(String msg) {
+        Response response = null;
         try {
             String encodedMsg = URLEncoder.encode(msg, "UTF-8");
-            String url = prefixUrl + "永辉超市上新啦/" + encodedMsg;
+            String url = prefixUrl + "永辉超市上新啦/" + encodedMsg + "?sound=minuet";
             Request request = new Request.Builder().url(url).get().build();
-            Response response = okHttpClient.newCall(request).execute();
+            response = okHttpClient.newCall(request).execute();
             response.isSuccessful();
         } catch (Exception e) {
             log.error("[sendNotice] 发送Bark通知失败, 通知内容: {}", msg, e);
+        } finally {
+            if (response != null) {
+                response.close();
+            }
         }
     }
 
